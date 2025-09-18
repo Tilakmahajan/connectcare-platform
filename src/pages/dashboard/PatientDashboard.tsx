@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
+import { DoctorSearch } from '@/components/search/DoctorSearch';
+import { AppointmentBooking } from '@/components/appointments/AppointmentBooking';
+import { VideoConsultation } from '@/components/video/VideoConsultation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +21,8 @@ import {
   Video,
   Clock,
   Download,
-  Search
+  Search,
+  Stethoscope
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -31,7 +35,8 @@ const mockAppointments = [
     date: '2024-01-15',
     time: '10:00 AM',
     status: 'confirmed',
-    type: 'video'
+    type: 'video',
+    symptoms: 'Chest pain and shortness of breath'
   },
   {
     id: '2',
@@ -40,7 +45,8 @@ const mockAppointments = [
     date: '2024-01-12',
     time: '2:30 PM',
     status: 'completed',
-    type: 'video'
+    type: 'video',
+    symptoms: 'Skin rash consultation'
   }
 ];
 
@@ -78,6 +84,7 @@ const Sidebar = () => {
 
   const menuItems = [
     { name: 'Dashboard', href: '/patient', icon: LayoutDashboard },
+    { name: 'Find Doctors', href: '/patient/find-doctors', icon: Stethoscope },
     { name: 'Appointments', href: '/patient/appointments', icon: Calendar },
     { name: 'Prescriptions', href: '/patient/prescriptions', icon: FileText },
     { name: 'Profile', href: '/patient/profile', icon: User }
@@ -151,10 +158,10 @@ const DashboardHome = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Link to="/patient/appointments">
+            <Link to="/patient/find-doctors">
               <Button className="btn-medical w-full h-20 flex-col space-y-2">
                 <Plus className="w-6 h-6" />
-                <span>Book Appointment</span>
+                <span>Find & Book Doctor</span>
               </Button>
             </Link>
             <Button className="btn-secondary-medical w-full h-20 flex-col space-y-2">
@@ -221,141 +228,150 @@ const DashboardHome = () => {
   );
 };
 
-const AppointmentsPage = () => {
-  const [bookingForm, setBookingForm] = useState({
-    doctor: '',
-    date: '',
-    time: '',
-    symptoms: ''
-  });
+const FindDoctorsPage = () => {
+  const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
+  const [showBooking, setShowBooking] = useState(false);
+
+  const handleSelectDoctor = (doctor: any) => {
+    setSelectedDoctor(doctor);
+    setShowBooking(true);
+  };
+
+  const handleBookingComplete = (appointmentData: any) => {
+    setShowBooking(false);
+    setSelectedDoctor(null);
+    // In real app, you'd update the appointments list
+  };
+
+  const handleBackToSearch = () => {
+    setShowBooking(false);
+    setSelectedDoctor(null);
+  };
+
+  if (showBooking && selectedDoctor) {
+    return (
+      <AppointmentBooking
+        doctor={selectedDoctor}
+        onBack={handleBackToSearch}
+        onBookingComplete={handleBookingComplete}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-foreground">Appointments</h2>
-        <Button className="btn-medical">
-          <Plus className="w-4 h-4 mr-2" />
-          Book New Appointment
-        </Button>
+        <h2 className="text-2xl font-bold text-foreground">Find Doctors</h2>
+        <p className="text-muted-foreground">
+          Search and book appointments with certified healthcare professionals
+        </p>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Booking Form */}
-        <Card className="card-medical">
-          <CardHeader>
-            <CardTitle>Book New Appointment</CardTitle>
-            <CardDescription>Schedule a consultation with a specialist</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="doctor">Choose Doctor</Label>
-              <Select value={bookingForm.doctor} onValueChange={(value) => setBookingForm(prev => ({ ...prev, doctor: value }))}>
-                <SelectTrigger className="input-medical">
-                  <SelectValue placeholder="Select a doctor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mockDoctors.map((doctor) => (
-                    <SelectItem key={doctor.id} value={doctor.id}>
-                      {doctor.name} - {doctor.specialization} ({doctor.price})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      <DoctorSearch onSelectDoctor={handleSelectDoctor} />
+    </div>
+  );
+};
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={bookingForm.date}
-                  onChange={(e) => setBookingForm(prev => ({ ...prev, date: e.target.value }))}
-                  className="input-medical"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="time">Time</Label>
-                <Select value={bookingForm.time} onValueChange={(value) => setBookingForm(prev => ({ ...prev, time: value }))}>
-                  <SelectTrigger className="input-medical">
-                    <SelectValue placeholder="Select time" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="09:00">9:00 AM</SelectItem>
-                    <SelectItem value="10:00">10:00 AM</SelectItem>
-                    <SelectItem value="11:00">11:00 AM</SelectItem>
-                    <SelectItem value="14:00">2:00 PM</SelectItem>
-                    <SelectItem value="15:00">3:00 PM</SelectItem>
-                    <SelectItem value="16:00">4:00 PM</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+const AppointmentsPage = () => {
+  const [showVideoCall, setShowVideoCall] = useState(false);
+  const [activeAppointment, setActiveAppointment] = useState<any>(null);
 
-            <div className="space-y-2">
-              <Label htmlFor="symptoms">Symptoms/Reason for Visit</Label>
-              <Textarea
-                id="symptoms"
-                placeholder="Describe your symptoms or reason for the consultation..."
-                value={bookingForm.symptoms}
-                onChange={(e) => setBookingForm(prev => ({ ...prev, symptoms: e.target.value }))}
-                className="input-medical min-h-24"
-              />
-            </div>
+  const handleJoinCall = (appointment: any) => {
+    setActiveAppointment(appointment);
+    setShowVideoCall(true);
+  };
 
-            <Button className="btn-medical w-full">
-              Book Appointment
-            </Button>
-          </CardContent>
-        </Card>
+  const handleEndCall = () => {
+    setShowVideoCall(false);
+    setActiveAppointment(null);
+  };
 
-        {/* Appointments List */}
-        <Card className="card-medical">
-          <CardHeader>
-            <CardTitle>Your Appointments</CardTitle>
-            <CardDescription>Upcoming and past consultations</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {mockAppointments.map((appointment) => (
-              <motion.div
-                key={appointment.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-4 bg-accent rounded-lg"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-foreground">{appointment.doctor}</h4>
-                  <Badge className={`${
-                    appointment.status === 'confirmed' ? 'badge-success' :
-                    appointment.status === 'completed' ? 'badge-pending' :
-                    'badge-warning'
-                  }`}>
-                    {appointment.status}
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground mb-2">{appointment.specialization}</p>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                    <span className="flex items-center">
-                      <Calendar className="w-4 h-4 mr-1" />
-                      {appointment.date}
-                    </span>
-                    <span className="flex items-center">
-                      <Clock className="w-4 h-4 mr-1" />
-                      {appointment.time}
-                    </span>
+  if (showVideoCall && activeAppointment) {
+    return (
+      <VideoConsultation
+        doctor={{
+          id: '1',
+          name: activeAppointment.doctor,
+          specialization: activeAppointment.specialization,
+        }}
+        onEndCall={handleEndCall}
+        isDoctor={false}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-foreground">My Appointments</h2>
+        <Link to="/patient/find-doctors">
+          <Button className="btn-medical">
+            <Plus className="w-4 h-4 mr-2" />
+            Book New Appointment
+          </Button>
+        </Link>
+      </div>
+
+      {/* Appointments List */}
+      <div className="grid gap-4">
+        {mockAppointments.map((appointment) => (
+          <motion.div
+            key={appointment.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Card className="card-medical">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">{appointment.doctor}</h3>
+                    <p className="text-primary font-medium">{appointment.specialization}</p>
+                    <div className="flex items-center space-x-4 mt-2 text-sm text-muted-foreground">
+                      <span className="flex items-center">
+                        <Calendar className="w-4 h-4 mr-1" />
+                        {appointment.date}
+                      </span>
+                      <span className="flex items-center">
+                        <Clock className="w-4 h-4 mr-1" />
+                        {appointment.time}
+                      </span>
+                      <span className="flex items-center">
+                        <Video className="w-4 h-4 mr-1" />
+                        {appointment.type} consultation
+                      </span>
+                    </div>
                   </div>
-                  {appointment.status === 'confirmed' && (
-                    <Button size="sm" className="btn-medical">
-                      <Video className="w-4 h-4 mr-1" />
-                      Join
-                    </Button>
-                  )}
+                  <div className="flex items-center space-x-2">
+                    <Badge className={`${
+                      appointment.status === 'confirmed' ? 'badge-success' :
+                      appointment.status === 'completed' ? 'badge-pending' :
+                      'badge-warning'
+                    }`}>
+                      {appointment.status}
+                    </Badge>
+                    {appointment.status === 'confirmed' && (
+                      <Button 
+                        size="sm" 
+                        className="btn-medical"
+                        onClick={() => handleJoinCall(appointment)}
+                      >
+                        <Video className="w-4 h-4 mr-1" />
+                        Join Call
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </motion.div>
-            ))}
-          </CardContent>
-        </Card>
+                
+                {appointment.symptoms && (
+                  <div className="bg-accent p-3 rounded-lg">
+                    <p className="text-sm font-medium text-foreground mb-1">Reason for visit:</p>
+                    <p className="text-sm text-muted-foreground">{appointment.symptoms}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
       </div>
     </div>
   );
@@ -462,6 +478,7 @@ const PatientDashboard = () => {
     <DashboardLayout sidebar={<Sidebar />} title="Patient Dashboard">
       <Routes>
         <Route path="/" element={<DashboardHome />} />
+        <Route path="/find-doctors" element={<FindDoctorsPage />} />
         <Route path="/appointments" element={<AppointmentsPage />} />
         <Route path="/prescriptions" element={<PrescriptionsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
